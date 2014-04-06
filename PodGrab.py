@@ -46,7 +46,8 @@ MODE_IMPORT = 80
 NUM_MAX_DOWNLOADS = 1000
 DOWNLOAD_DIRECTORY = "podcasts"
 current_directory = ""
-m3u_file = ""
+M3U_FILE = ""
+M3U_FILE_ENABLED = False
 total_item = 0
 total_size = 0
 has_error = 0
@@ -63,9 +64,9 @@ def main(argv):
     mail = ""
 
     global current_directory
-    global m3u_file
+    global M3U_FILE
     now = datetime.datetime.now()
-    m3u_file = str(now)[:10] + '.m3u'
+    M3U_FILE = str(now)[:10] + '.m3u'
     current_directory = os.path.realpath(os.path.dirname(sys.argv[0]))
     download_directory = current_directory + os.sep + DOWNLOAD_DIRECTORY
 
@@ -464,9 +465,11 @@ def write_podcast(item, channel_title, date, type):
             output.close()
             print "Podcast: ", item, " downloaded to: ", local_file
 
-            output = open(current_directory + os.sep + m3u_file, 'a')
-            output.write(DOWNLOAD_DIRECTORY + os.sep + channel_title + os.sep + item_file_name + "\n")
-            output.close()
+            if M3U_FILE_ENABLED:
+                output = open(current_directory + os.sep + M3U_FILE, 'a')
+                output.write(DOWNLOAD_DIRECTORY + os.sep + channel_title + os.sep + item_file_name + "\n")
+                output.close()
+
             return 'Successful Write'
         except urllib2.URLError, e:
             print "ERROR - Could not write item to file: ", e
