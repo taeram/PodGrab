@@ -44,8 +44,8 @@ MODE_MAIL_LIST = 78
 MODE_EXPORT = 79
 MODE_IMPORT = 80
 NUM_MAX_DOWNLOADS = 1000
-DOWNLOAD_DIRECTORY = "podcasts"
-current_directory = ""
+APP_DIRECTORY = os.path.realpath(os.path.dirname(sys.argv[0]))
+DOWNLOAD_DIRECTORY = APP_DIRECTORY + os.sep + "Podcasts"
 M3U_FILE = ""
 M3U_FILE_ENABLED = False
 total_item = 0
@@ -53,6 +53,11 @@ total_size = 0
 has_error = 0
 
 def main(argv):
+    global DOWNLOAD_DIRECTORY
+    global M3U_FILE
+    global total_items
+    global total_size
+
     mode = MODE_NONE
     has_error = 0
     num_podcasts = 0
@@ -62,16 +67,8 @@ def main(argv):
     mail_address = ""
     message = ""
     mail = ""
-
-    global current_directory
-    global M3U_FILE
     now = datetime.datetime.now()
     M3U_FILE = str(now)[:10] + '.m3u'
-    current_directory = os.path.realpath(os.path.dirname(sys.argv[0]))
-    download_directory = current_directory + os.sep + DOWNLOAD_DIRECTORY
-
-    global total_items
-    global total_size
     total_items = 0
     total_size = 0
     data = ""
@@ -87,8 +84,12 @@ def main(argv):
     parser.add_argument('-ml', '--mail-list', action="store_const", const="MAIL", dest="list_mail", help='Lists all current mail addresses')
     parser.add_argument('-io', '--import', action="store", dest="opml_import", help='Import subscriptions from OPML file')
     parser.add_argument('-eo', '--export', action="store_const", const="OPML_EXPORT", dest="opml_export", help='Export subscriptions to OPML file')
+    parser.add_argument('-dir', '--download-directory', nargs=1, default=DOWNLOAD_DIRECTORY, dest="dir", help='Set the download directory')
 
     arguments = parser.parse_args()
+
+    if len(arguments.dir) is 1:
+        DOWNLOAD_DIRECTORY = arguments.dir[0]
 
     if arguments.sub_feed_url:
         feed_url = arguments.sub_feed_url
@@ -100,7 +101,6 @@ def main(argv):
             print "XML data source opened\n"
             mode = MODE_SUBSCRIBE
     elif arguments.dl_feed_url:
-
         feed_url = arguments.dl_feed_url
         data = open_datasource(feed_url)
         if not data:
@@ -110,7 +110,6 @@ def main(argv):
             print "XML data source opened\n"
             mode = MODE_DOWNLOAD
     elif arguments.unsub_url:
-
         feed_url = arguments.unsub_url
         mode = MODE_UNSUBSCRIBE
     elif arguments.list_subs:
@@ -118,31 +117,27 @@ def main(argv):
     elif arguments.update_subs:
         mode = MODE_UPDATE
     elif arguments.mail_address_add:
-
         mail_address = arguments.mail_address_add
         mode = MODE_MAIL_ADD
     elif arguments.mail_address_delete:
-
         mail_address = arguments.mail_address_delete
         mode = MODE_MAIL_DELETE
     elif arguments.list_mail:
         mode = MODE_MAIL_LIST
     elif arguments.opml_import:
-
         import_file_name = arguments.opml_import
         mode = MODE_IMPORT
     elif arguments.opml_export:
         mode = MODE_EXPORT
     else:
-
         error_string = "No Arguments supplied - for usage run 'PodGrab.py -h'"
         has_error = 1
 
     print "Default encoding: " + sys.getdefaultencoding()
     todays_date = strftime("%a, %d %b %Y %H:%M:%S", gmtime())
-    print "Current Directory: ", current_directory
-    if does_database_exist(current_directory):
-        connection = connect_database(current_directory)
+    print "Current Directory: ", APP_DIRECTORY
+    if does_database_exist(APP_DIRECTORY):
+        connection = connect_database(APP_DIRECTORY)
         if not connection:
             error_string = "Could not connect to PodGrab database file!"
             has_error = 1
@@ -150,7 +145,7 @@ def main(argv):
             cursor = connection.cursor()
     else:
         print "PodGrab database missing. Creating..."
-        connection = connect_database(current_directory)
+        connection = connect_database(APP_DIRECTORY)
         if not connection:
             error_string = "Could not create PodGrab database file!"
             has_error = 1
@@ -160,16 +155,16 @@ def main(argv):
             setup_database(cursor, connection)
             print "Database setup complete"
 
-    if not os.path.exists(download_directory):
+    if not os.path.exists(DOWNLOAD_DIRECTORY):
         print "Podcast download directory is missing. Creating..."
         try:
-            os.mkdir(download_directory)
-            print "Download directory '" + download_directory + "' created"
+            os.mkdir(DOWNLOAD_DIRECTORY)
+            print "Download directory '" + DOWNLOAD_DIRECTORY + "' created"
         except OSError:
             error_string = "Could not create podcast download sub-directory!"
             has_error = 1
     else:
-        print "Download directory exists: '" + download_directory + "'"
+        print "Download directory exists: '" + DOWNLOAD_DIRECTORY + "'"
     if not has_error:
         if mode == MODE_UNSUBSCRIBE:
             feed_name = get_name_from_feed(cursor, connection, feed_url)
@@ -177,7 +172,7 @@ def main(argv):
                 print "Feed does not exist in the database! Skipping..."
             else:
                 feed_name = clean_string(feed_name)
-                channel_directory = download_directory + os.sep + feed_name
+                channel_directory = DOWNLOAD_DIRECTORY + os.sep + feed_name
                 print "Deleting '" + channel_directory + "'..."
                 delete_subscription(cursor, connection, feed_url)
                 try:
@@ -202,7 +197,7 @@ def main(argv):
                     message = iterate_feed(
                         data,
                         mode,
-                        download_directory,
+                        DOWNLOAD_DIRECTORY,
                         todays_date,
                         cursor,
                         connection,
@@ -218,7 +213,7 @@ def main(argv):
             print iterate_feed(
                 data,
                 mode,
-                download_directory,
+                DOWNLOAD_DIRECTORY,
                 todays_date,
                 cursor,
                 connection,
@@ -233,9 +228,9 @@ def main(argv):
         elif mode == MODE_MAIL_LIST:
             list_mail_addresses(cursor, connection)
         elif mode == MODE_EXPORT:
-            export_opml_file(cursor, connection, current_directory)
+            export_opml_file(cursor, connection, DOWNLOAD_DIRECTORY)
         elif mode == MODE_IMPORT:
-            import_opml_file(cursor, connection, current_directory, download_directory, import_file_name)
+            import_opml_file(cursor, connection, DOWNLOAD_DIRECTORY, import_file_name)
     else:
         print "Sorry, there was some sort of error: '" + error_string + "'\nExiting...\n"
         if connection:
@@ -288,7 +283,7 @@ def export_opml_file(cur, conn, cur_dir):
     print str(item_count) + " item(s) exported to: '" + file_name + "'. COMPLETE"
 
 
-def import_opml_file(cur, conn, cur_dir, download_dir, import_file):
+def import_opml_file(cur, conn, download_dir, import_file):
     count = 0
     print "Importing OPML file '" + import_file + "'..."
     if import_file.startswith("/") or import_file.startswith(".."):
@@ -296,9 +291,9 @@ def import_opml_file(cur, conn, cur_dir, download_dir, import_file):
         if not data:
             print "ERROR = Could not open OPML file '" + import_file + "'"
     else:
-        data = open_datasource(cur_dir + os.sep + import_file)
+        data = open_datasource(download_dir + os.sep + import_file)
         if not data:
-            print "ERROR - Could not open OPML file '" + cur_dir + os.sep + import_file + "'"
+            print "ERROR - Could not open OPML file '" + download_dir + os.sep + import_file + "'"
     if data:
         print "File opened...please wait"
         try:
@@ -416,7 +411,7 @@ def write_podcast(item, channel_title, date, type):
     if len(item_file_name) > 50:
         item_file_name = item_file_name[:50]
 
-    local_file = current_directory + os.sep + DOWNLOAD_DIRECTORY + os.sep + channel_title + os.sep + clean_string(item_file_name)
+    local_file = DOWNLOAD_DIRECTORY + os.sep + channel_title + os.sep + clean_string(item_file_name)
     if type == "video/quicktime" or type == "audio/mp4" or type == "video/mp4":
         if not local_file.endswith(".mp4"):
             local_file = local_file + ".mp4"
@@ -466,7 +461,7 @@ def write_podcast(item, channel_title, date, type):
             print "Podcast: ", item, " downloaded to: ", local_file
 
             if M3U_FILE_ENABLED:
-                output = open(current_directory + os.sep + M3U_FILE, 'a')
+                output = open(DOWNLOAD_DIRECTORY + os.sep + M3U_FILE, 'a')
                 output.write(DOWNLOAD_DIRECTORY + os.sep + channel_title + os.sep + item_file_name + "\n")
                 output.close()
 
