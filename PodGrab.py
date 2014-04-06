@@ -7,9 +7,6 @@
 # Jonathan Baker
 # jon@the-node.org (http://the-node.org)
 
-# Werner Avenant - added small changes to write M3U file of podcasts downloaded today
-# werner.avenant@gmail.com (http://www.collectiveminds.co.za)
-
 # Do with this code what you will, it's "open source". As a courtesy,
 # I would appreciate credit if you base your code on mine. If you find
 # a bug or think the code sucks balls, please let me know :-)
@@ -46,19 +43,13 @@ MODE_MAIL_DELETE = 77
 MODE_MAIL_LIST = 78
 MODE_EXPORT = 79
 MODE_IMPORT = 80
-
 NUM_MAX_DOWNLOADS = 1000
-
 DOWNLOAD_DIRECTORY = "podcasts"
-
-# Added 2011-10-06 Werner Avenant - added current_dictory here so it can be global
 current_directory = ""
 m3u_file = ""
-
 total_item = 0
 total_size = 0
 has_error = 0
-
 
 def main(argv):
     mode = MODE_NONE
@@ -70,8 +61,6 @@ def main(argv):
     mail_address = ""
     message = ""
     mail = ""
-
-    # Added 2011-10-06 Werner Avenant
 
     global current_directory
     global m3u_file
@@ -354,9 +343,6 @@ def iterate_feed(data, mode, download_dir, today, cur, conn, feed):
             print "Current Date: ", today
             if mode == MODE_DOWNLOAD:
                 print "Bulk download. Processing..."
-
-                          # 2011-10-06 Replaced channel_directory with channel_title - needed for m3u file later
-
                 num_podcasts = iterate_channel(
                     channel,
                     today,
@@ -371,9 +357,6 @@ def iterate_feed(data, mode, download_dir, today, cur, conn, feed):
                 print "Feed to subscribe to: " + feed + ". Checking for database duplicate..."
                 if not does_sub_exist(cur, conn, feed):
                     print "Subscribe. Processing..."
-
-                            # 2011-10-06 Replaced channel_directory with channel_title - needed for m3u file later
-
                     num_podcasts = iterate_channel(
                         channel,
                         today,
@@ -426,9 +409,6 @@ def clean_string(str):
     return new_string_final
 
 
-# Change 2011-10-06 - Changed chan_loc to channel_title to help with relative path names
-# in the m3u file
-
 def write_podcast(item, channel_title, date, type):
     (item_path, item_file_name) = os.path.split(item)
 
@@ -479,15 +459,10 @@ def write_podcast(item, channel_title, date, type):
             item_file = urllib2.urlopen(item)
             output = open(local_file, 'wb')
 
-            # 2011-10-06 Werner Avenant - For some reason the file name changes when
-            # saved to disk - probably a python feature (sorry, only wrote my first line of python today)
-
             item_file_name = os.path.basename(output.name)
             output.write(item_file.read())
             output.close()
             print "Podcast: ", item, " downloaded to: ", local_file
-
-            # 2011-11-06 Append to m3u file
 
             output = open(current_directory + os.sep + m3u_file, 'a')
             output.write(DOWNLOAD_DIRECTORY + os.sep + channel_title + os.sep + item_file_name + "\n")
@@ -661,9 +636,6 @@ def iterate_channel(chan, today, mode, cur, conn, feed, channel_title):
                     print "According to database we already have the episode dated " + item_date
                     break
         except IndexError, e:
-
-            # traceback.print_exc()
-
             print "This RSS item has no downloadable URL link for the podcast for '" + item_title + "'. Skipping..."
 
     return str(num) + " podcasts totalling " + str(size) + " bytes"
