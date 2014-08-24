@@ -52,6 +52,7 @@ total_item = 0
 total_size = 0
 has_error = 0
 
+
 def main(argv):
     global DOWNLOAD_DIRECTORY
     global M3U_FILE
@@ -252,7 +253,7 @@ def open_datasource(xml_url):
     except httplib.IncompleteRead:
         print "ERROR - Incomplete data read. Please try again later"
         response = False
-    if response != False:
+    if response is not False:
         return response.read()
     else:
         return response
@@ -268,7 +269,7 @@ def export_opml_file(cur, conn, cur_dir):
     subs = get_subscriptions(cur, conn)
     file_handle = open(file_name, "w")
     print "Exporting RSS subscriptions database to: '" + file_name + "' OPML file...please wait.\n"
-    header =  "<opml version=\"2.0\">\n<head>\n\t<title>PodGrab Subscriptions</title>\n</head>\n<body>\n"
+    header = "<opml version=\"2.0\">\n<head>\n\t<title>PodGrab Subscriptions</title>\n</head>\n<body>\n"
     file_handle.writelines(header)
     for sub in subs:
         feed_name = sub[0]
