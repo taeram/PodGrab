@@ -207,7 +207,7 @@ def main(argv):
                     print message
                     mail += message
             mail = mail + "\n\n" + str(total_items) + " podcasts totalling " + str(total_size) + " bytes have been downloaded."
-            if has_mail_users(cursor, connection):
+            if has_mail_users(cursor, connection) and total_items > 0:
                 print "Have e-mail address(es) - attempting e-mail..."
                 mail_updates(cursor, connection, mail, str(total_items))
         elif mode == MODE_DOWNLOAD or mode == MODE_SUBSCRIBE:
