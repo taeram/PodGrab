@@ -225,7 +225,7 @@ def main(argv):
             print "E-Mail address: " + mail_address + " has been added"
         elif mode == MODE_MAIL_DELETE:
             delete_mail_user(cursor, connection, mail_address)
-            print "E-Mail address: " + mailAddress + " has been deleted"
+            print "E-Mail address: " + mail_address + " has been deleted"
         elif mode == MODE_MAIL_LIST:
             list_mail_addresses(cursor, connection)
         elif mode == MODE_EXPORT:
